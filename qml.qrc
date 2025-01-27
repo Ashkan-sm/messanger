@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>qml_resources/chatwindow_dir/ChatWindow.qml</file>
+        <file>qml_resources/Clientbutton.qml</file>
+
+        <file>qml_resources/Login.qml</file>
+        <file>qml_resources/Menu.qml</file>
+        <file>qml_resources/ServerSearch.qml</file>
+        <file>qml_resources/ServerSelectButton.qml</file>
+        <file>qml_resources/SettingMenu.qml</file>
+
+
+        <file>qml_resources/chatwindow_dir/Download_button.qml</file>
+        <file>qml_resources/chatwindow_dir/Textbox.qml</file>
+        <file>qml_resources/chatwindow_dir/ImageView.qml</file>
+        <file>qml_resources/chatwindow_dir/VideoView.qml</file>
+        <file>qml_resources/chatwindow_dir/StickerWindow.qml</file>
+    </qresource>
+</RCC>
