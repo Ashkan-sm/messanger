@@ -41,20 +41,6 @@ void Client::user_handle(std::string server_ip,std::string server_port)
 
 
 
-void Client::
-writemssg(int socket, const char *msg)
-{
-
-    std::string msgstr(msg);
-
-    std::string header(10,' ');
-    std::string msglength=std::to_string(msgstr.length());
-    header.replace(0,msglength.length(),msglength);
-
-    std::string buffer(header+msgstr);
-
-    send(socket,buffer.c_str(),buffer.length(),0);
-}
 
 
 void create_directory_if_not_exists(const std::string& path) {
@@ -91,7 +77,7 @@ Client::Client(QObject *parent): QObject{parent}
 
 void Client::send_message(QString text)
 {
-    writemssg(tcp_connection->nClientSocket,text.toStdString().c_str());
+    tcp_connection->writemssg(text.toStdString().c_str());
 }
 
 QString Client::now_time()
@@ -106,18 +92,16 @@ QString Client::now_time()
 
 void Client::send_private_message(QString to,QString text)
 {
-
-    writemssg(tcp_connection->nClientSocket,("/private_msg "+to.toStdString()).c_str());
-    writemssg(tcp_connection->nClientSocket,(text.toStdString()).c_str());
-    writemssg(tcp_connection->nClientSocket,"EOLOG");
-
+    tcp_connection->writemssg(("/private_msg "+to.toStdString()).c_str());
+    tcp_connection->writemssg((text.toStdString()).c_str());
+    tcp_connection->writemssg("EOLOG");
 }
 
 void Client::send_private_file(QString to, QString path)
 {
-    sendfile(tcp_connection->nClientSocket,path.toStdString(),to);
-    writemssg(tcp_connection->nClientSocket,"EOLOG");
+    tcp_connection->sendfile(path.toStdString(),to);
 
+    tcp_connection->writemssg("EOLOG");
 
 }
 
@@ -126,8 +110,9 @@ void Client::go_to_private(QString text)
     m_Chats[text]="";
     std::ifstream savefile;
     savefile.open(("savedata_client/"+MyId+text.toStdString()+".txt"),std::ios::in);
-    writemssg(tcp_connection->nClientSocket,("/status_update "+text.toStdString()+" 3").c_str());
-    writemssg(tcp_connection->nClientSocket,"EOLOG");
+    tcp_connection->writemssg(("/status_update "+text.toStdString()+" 3").c_str());
+    tcp_connection->writemssg("EOLOG");
+
     if(savefile.is_open()){
         std::string line;
         while (std::getline(savefile, line)) {
@@ -275,71 +260,15 @@ void Client::setNotif(const QVariantMap &newNotif)
 
 
 void Client::get_private_file(QString text) {
-    writemssg(tcp_connection->nClientSocket,("/get_file "+text).toStdString().c_str());
-    writemssg(tcp_connection->nClientSocket,"EOLOG");
+
+    tcp_connection->writemssg(("/get_file "+text).toStdString().c_str());
+    tcp_connection->writemssg("EOLOG");
+
 }
 
-void Client::sendfile(int socket, std::string filename,QString to) {
-    std::ifstream file(filename.substr(7),std::ios::binary);
-    qInfo()<<filename.substr(7);
-    if (file.is_open()){
-        writemssg(socket,("/send_file "+filename.substr(filename.rfind('/'))+" "+to.toStdString()).c_str());
-        writemssg(socket,"EOLOG");
 
 
 
-        qInfo()<<filename+" "+to.toStdString();
-        long long int size=filesize(filename.substr(7).c_str());
-        std::cout<<"size send : "<<size<<std::endl;
-        writemssg(socket, std::to_string(size).c_str());
-
-        char buffer[1024];
-        do {
-            file.read(buffer,sizeof(buffer));
-            if (file.gcount()){
-                auto a =file.gcount();
-                send(socket,buffer,file.gcount(),0);
-            }
-        } while (!file.eof());
-
-    }
-
-    else{
-        qInfo()<<"didnt open file";
-    }
-}
-std::ifstream::pos_type Client::filesize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    std::ifstream::pos_type loc=in.tellg();
-    in.close();
-    return loc;
-}
-
-std::string Client::revcfile(int socket, std::string filename) {
-
-    std::ofstream resivedfile("./savedata_client/"+filename);
-
-    ssize_t bytes_received;
-
-    char buffer[1024];
-    char sizestr[1024];
-    tcp_connection->readmsg(socket,sizestr);
-    long long int size = atoi(sizestr);
-    long long int recvCounter=0;
-    while(recvCounter+1024<size){
-        bytes_received = recv(socket, buffer, sizeof(buffer), 0);
-        resivedfile.write(buffer,bytes_received);
-        recvCounter += bytes_received;
-    }
-    bytes_received = recv(socket, buffer, size-recvCounter, 0);
-    resivedfile.write(buffer,bytes_received);
-
-
-    resivedfile.close();
-
-    return filename.substr(filename.find('.')+1);
-}
 
 void Client::go_to_server(QString text) {
     std::cout<<text.toStdString()<<"yooo"<<std::endl;
@@ -351,8 +280,9 @@ void Client::go_to_server(QString text) {
 
 void Client::logout() {
     connected=0;
-    writemssg(tcp_connection->nClientSocket,"/logout");
-    writemssg(tcp_connection->nClientSocket,"EOLOG");
+    tcp_connection->writemssg("/logout");
+    tcp_connection->writemssg("EOLOG");
+
 }
 
 void Client::client_run(std::vector<std::string> lines) {
@@ -389,8 +319,8 @@ void Client::client_run(std::vector<std::string> lines) {
         if (sender==Chatwindow().toStdString() || sender==MyId){
 
             m_Chats[QString::fromStdString(sender)]=m_Chats[QString::fromStdString(sender)].toString()+QString::fromStdString(sender)+"> "+QString::fromStdString(lines[1]+"EOMSG");
-            writemssg(tcp_connection->nClientSocket,("/status_update "+sender+" 3").c_str());
-            writemssg(tcp_connection->nClientSocket,"EOLOG");
+            tcp_connection->writemssg(("/status_update "+sender+" 3").c_str());
+            tcp_connection->writemssg("EOLOG");
 
             emit ChatsChanged();
         }
@@ -412,10 +342,8 @@ void Client::client_run(std::vector<std::string> lines) {
         std::fstream savefile;
 
         while(1) {
-
             std::size_t index = lastmsg.rfind("/status");
             // std::cout<<id<<"**"<<lastmsg<<std::endl;
-
             if (index == std::string::npos) {
                 break;
             }
@@ -460,7 +388,8 @@ void Client::client_run(std::vector<std::string> lines) {
     }
     else if(strncmp(lines[0].c_str(),"/sending_file",strlen("/sending_file"))==0){
         std::string path=lines[0].substr(lines[0].find(' ')+1);
-        std::string type=revcfile(tcp_connection->nClientSocket,path);
+
+        std::string type= tcp_connection->revcfile(path);
 
         if (type=="png"){
             appendChats(Chatid(),Chatid()+"> "+"/image "+QString::fromStdString(path)+"/time "+now_time()+"/status 2"+"EOMSG");

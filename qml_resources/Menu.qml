@@ -53,7 +53,7 @@ Window {
                                     main_window.visible=true
                                     client.logout()
                                     client.WindowId=0;
-                                    menu.close()
+                                    menu.visible=false;
                                 }
 
                             }
@@ -181,11 +181,9 @@ Window {
                 }
 
             }
-
-
         }
 
     onClosing: {
-        main_window.visible=true;  // Ensure the application quits when the window is closed
+        Qt.exit(0)// Ensure the application quits when the window is closed
     }
 }

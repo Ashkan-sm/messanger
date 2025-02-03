@@ -89,17 +89,17 @@ Connection_Client::Connection_Client(int PORT,in_addr_t IP,bool is_udp) {
 int Connection_Client::read_sock(char *databuf,int size) {
     return read(nClientSocket, databuf,size);
 }
-int Connection_Client::readmsg(int socket, char *out)
+int Connection_Client::readmsg(char *out)
 {
     memset(out, '\0', strlen(out));
     char header[HEADER_SIZE];
-    recv(socket,header,HEADER_SIZE,0);
+    recv(nClientSocket,header,HEADER_SIZE,0);
     header[HEADER_SIZE]='\0';
     //std::string headstr(header);
 
     int size=std::atoi(header);
     int o;
-    o=recv(socket,out,size,0);
+    o=recv(nClientSocket,out,size,0);
     out[o]='\0';
 //    std::cout<<"got from server: "<<out<<std::endl;
     return o;
@@ -109,7 +109,7 @@ void Connection_Client::connection_manager(Client* client_pointer) {
     while(1){
         char buffer[4096]={0};
         qInfo()<<"reading";
-        readmsg(nClientSocket,buffer);
+        readmsg(buffer);
         logs.push_back((buffer));
         std::cout<<"got : "<<buffer<<std::endl;
         if (strncmp(buffer,"EOLOG",strlen("EOLOG"))==0){
@@ -121,5 +121,85 @@ void Connection_Client::connection_manager(Client* client_pointer) {
 }
 
 Connection_Client::Connection_Client() {
+
+}
+
+void Connection_Client::writemssg(const char *msg) {
+
+
+    std::string msgstr(msg);
+
+    std::string header(10,' ');
+    std::string msglength=std::to_string(msgstr.length());
+    header.replace(0,msglength.length(),msglength);
+
+    std::string buffer(header+msgstr);
+
+    send(nClientSocket,buffer.c_str(),buffer.length(),0);
+
+}
+
+void Connection_Client::sendfile(std::string filename, QString to)
+{
+    std::ifstream file(filename.substr(7),std::ios::binary);
+    qInfo()<<filename.substr(7);
+    if (file.is_open()){
+        writemssg(("/send_file "+filename.substr(filename.rfind('/'))+" "+to.toStdString()).c_str());
+        writemssg("EOLOG");
+
+
+
+        qInfo()<<filename+" "+to.toStdString();
+        long long int size=filesize(filename.substr(7).c_str());
+        std::cout<<"size send : "<<size<<std::endl;
+        writemssg(std::to_string(size).c_str());
+
+        char buffer[1024];
+        do {
+            file.read(buffer,sizeof(buffer));
+            if (file.gcount()){
+                auto a =file.gcount();
+                send(nClientSocket,buffer,file.gcount(),0);
+            }
+        } while (!file.eof());
+
+    }
+
+    else{
+        qInfo()<<"didnt open file";
+    }
+}
+
+std::ifstream::pos_type Connection_Client::filesize(const char *filename) {
+        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+        std::ifstream::pos_type loc=in.tellg();
+        in.close();
+        return loc;
+}
+
+std::string Connection_Client::revcfile(std::string filename) {
+
+
+        std::ofstream resivedfile("./savedata_client/"+filename);
+
+        ssize_t bytes_received;
+
+        char buffer[1024];
+        char sizestr[1024];
+        readmsg(sizestr);
+        long long int size = atoi(sizestr);
+        long long int recvCounter=0;
+        while(recvCounter+1024<size){
+            bytes_received = recv(nClientSocket, buffer, sizeof(buffer), 0);
+            resivedfile.write(buffer,bytes_received);
+            recvCounter += bytes_received;
+        }
+        bytes_received = recv(nClientSocket, buffer, size-recvCounter, 0);
+        resivedfile.write(buffer,bytes_received);
+
+
+        resivedfile.close();
+
+        return filename.substr(filename.find('.')+1);
 
 }

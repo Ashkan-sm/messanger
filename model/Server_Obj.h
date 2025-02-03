@@ -26,11 +26,10 @@
 class Connection_Manager;
 
 class Server_Obj {
-
+    int find_user_id(std::vector<User> &list,std::string id);
 public:
     explicit Server_Obj();
     void run(Connection_Manager* conection_manager, std::string id,std::vector<std::string> log_arr);
-    int find_user_id(std::vector<User> &list,std::string id);
 
 };
 

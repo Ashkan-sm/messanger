@@ -143,7 +143,7 @@ void Connection_Server::send_msg_to_sock(int sock,const char *msg) {
 
 void Connection_Server::send_file_to_sock(int sock, std::string filename) {
 
-    File_Handle file("./recived_files/"+filename,'b');
+    File_Handle file("./recived_files/"+filename,File_Handle::Method::IN);
 
     if (file.file_.is_open()){
         send_msg_to_sock(sock,("/sending_file "+filename).c_str());
@@ -186,7 +186,7 @@ int Connection_Server::read_msg_from_sock(int sock, char *buffer) {
 
 void Connection_Server::read_file_from_sock(int sock, std::string filename) {
     std::cout<<"getting file: "<<std::endl;
-    File_Handle resivedfile("./recived_files/"+filename.substr(filename.rfind('/')+1),'w');
+    File_Handle resivedfile("./recived_files/"+filename.substr(filename.rfind('/')+1),File_Handle::Method::OUT);
 
     ssize_t bytes_received;
 

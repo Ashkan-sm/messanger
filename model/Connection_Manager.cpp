@@ -4,9 +4,9 @@
 
 #include "Connection_Manager.h"
 
+Connection_Manager* Connection_Manager::instance= nullptr;
 
-
-Connection_Manager::Connection_Manager(int port_tcp,int port_udp,std::string udp_group_ip) {
+void Connection_Manager::set_up(int port_tcp,int port_udp,std::string udp_group_ip) {
     cnc_handle=Connection_Server(port_tcp,INADDR_ANY);
     broadcast_handle=Connection_Server(port_udp,inet_addr(udp_group_ip.c_str()),true);
     server = new Server_Obj;
@@ -225,6 +225,21 @@ void Connection_Manager::read_file_(std::string client_id, std::string message) 
 
 void Connection_Manager::join_exec() {
     exec_thread_->join();
+}
+
+Connection_Manager& Connection_Manager::get_instance() {
+    if (instance== nullptr){
+        instance=new Connection_Manager();
+    }
+    return (*instance);
+}
+
+Connection_Manager::Connection_Manager() {
+
+}
+
+std::vector<User> &Connection_Manager::getArrClient() {
+    return ArrClient;
 }
 
 

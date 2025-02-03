@@ -34,16 +34,19 @@ private:
     int port_;
     in_addr_t ip_;
     bool is_udp_;
-
+    int nClientSocket;
     int HEADER_SIZE=10;
     std::vector<std::string> logs;
+    std::ifstream::pos_type filesize(const char* filename);
 
 public:
-    int readmsg(int socket,char* out);
-    Connection_Client();
-    Connection_Client(int PORT,in_addr_t IP=INADDR_ANY,bool is_udp= false);
+    int readmsg(char* out);
+    explicit Connection_Client();
+    explicit Connection_Client(int PORT,in_addr_t IP=INADDR_ANY,bool is_udp= false);
     int read_sock(char *databuf,int size);
-    int nClientSocket;
+    void writemssg(const char *msg);
+    void sendfile(std::string filename,QString to);
+    std::string revcfile(std::string filename);
     void connection_manager(Client* client_pointer);
 
 };

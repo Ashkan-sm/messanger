@@ -30,7 +30,7 @@ void Server_Obj::run(Connection_Manager* conection_manager,std::string id,std::v
     else if(log_arr[0].compare(0, strlen("/private_msg"),"/private_msg")==0){
         std::string recname=log_arr[0].substr(log_arr[0].find(' ')+1);
         std::cout<<"recname on meesaage: "<<recname<<std::endl;
-        int recid= find_user_id(conection_manager->ArrClient,recname);
+        int recid= find_user_id(conection_manager->getArrClient(),recname);
 
         if (recid!=-1){
             if(recname!=id){
@@ -74,7 +74,7 @@ void Server_Obj::run(Connection_Manager* conection_manager,std::string id,std::v
         std::string recname=log_arr[0].substr(log_arr[0].find(' ')+1);
         char status=recname[recname.length()-1];
         recname=recname.substr(0,recname.find(' '));
-        int recid= find_user_id(conection_manager->ArrClient,recname);
+        int recid= find_user_id(conection_manager->getArrClient(),recname);
         if (recid!=-1){
             conection_manager->send_message_(recname,"/status_update "+id+" "+status);
             conection_manager->send_message_(recname,"EOLOG");

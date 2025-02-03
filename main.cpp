@@ -11,11 +11,9 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-
-
     QGuiApplication app(argc, argv);
     Client client;
-    qmlRegisterType<Client>("com.import", 1, 0, "Client");
+//    qmlRegisterType<Client>("com.import", 1, 0, "Client");
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("client", &client);

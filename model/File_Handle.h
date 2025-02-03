@@ -7,14 +7,19 @@
 
 #include <string>
 #include <fstream>
-
+#include <iostream>
 class File_Handle {
+private:
     std::string path_;
-    char method_;
 
 public:
-    File_Handle(std::string path,char method);
     std::fstream file_;
+    enum Method{IN,OUT,APP,BINARY};
+    File_Handle(std::string path,Method);
+    ~File_Handle();
+    std::basic_istream<char>& readline(std::string &);
+    void write(std::string);
+    int IsOpen();
     long long int size_of_file(std::string path);
 };
 

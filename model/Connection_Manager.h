@@ -27,30 +27,31 @@
 
 class Server_Obj;
 class Connection_Manager {
-    struct in_addr localInterface;
+private:
     int nMaxFd;
     int nRet=0;
-
-
     Connection_Server cnc_handle;
     Connection_Server broadcast_handle;
+    std::shared_ptr<std::thread> exec_thread_;
     Server_Obj* server;
-
+    Connection_Manager();
     static void pop_user_by_socket(std::vector<User> &list,int sock);
     static int find_user_id(std::vector<User> &list,std::string id);
-
-public:
-    Connection_Manager(int port_tcp,int port_udp,std::string udp_group_ip);
-    void start_server();
+    static Connection_Manager* instance;
     int MAX_CLIENTS=100;
     std::vector<User> ArrClient;
-    void send_message_(std::string client_id,std::string message);
+
+public:
+    static Connection_Manager& get_instance();
+    void set_up(int port_tcp,int port_udp,std::string udp_group_ip);
+    void start_server();
+    void join_exec();
+
     void send_file_(std::string client_id,std::string message);
     void read_file_(std::string client_id,std::string message);
     void logout(std::string id);
-    void join_exec();
-
-    std::shared_ptr<std::thread> exec_thread_;
+    void send_message_(std::string client_id,std::string message);
+    std::vector<User> &getArrClient() ;
 
 };
 
