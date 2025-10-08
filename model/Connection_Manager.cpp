@@ -153,9 +153,11 @@ void Connection_Manager::start_server() {
                                         savefile.clear();
                                         savefile.seekp(0, std::ios::end);
                                         savefile << ((std::string)buff).substr(9)+"\n";
+                                        std::cout<<"added user"<<std::endl;
                                         savefile.close();
                                     }
                                     username.close();
+
                                 }
                                 else{
                                     std::ifstream idfile("userid.txt");
