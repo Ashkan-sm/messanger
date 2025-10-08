@@ -76,6 +76,7 @@ Connection_Client::Connection_Client(int PORT,in_addr_t IP,bool is_udp) {
 
         if(auto code = ::connect(nClientSocket, (struct sockaddr*) & localSock, sizeof(localSock)) < 0){
             qInfo()<<"conection failed: "<<strerror(errno);
+            close(nClientSocket);
         }
     }
 
@@ -108,10 +109,10 @@ int Connection_Client::readmsg(char *out)
 void Connection_Client::connection_manager(Client* client_pointer) {
     while(1){
         char buffer[4096]={0};
-        qInfo()<<"reading";
+//        qInfo()<<"reading";
         readmsg(buffer);
         logs.push_back((buffer));
-        std::cout<<"got : "<<buffer<<std::endl;
+//        std::cout<<"got : "<<buffer<<std::endl;
         if (strncmp(buffer,"EOLOG",strlen("EOLOG"))==0){
             client_pointer->client_run(logs);
             logs.clear();

@@ -3,15 +3,55 @@
 //
 
 #include "Connection_Manager.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
+namespace fs = std::filesystem;
+
+void ensureFileExists(const std::string& path) {
+    fs::path filePath(path);
+    fs::path dirPath = filePath.parent_path();
+
+    // Create directories recursively if they do not exist
+    if (!dirPath.empty() && !fs::exists(dirPath)) {
+        if (!fs::create_directories(dirPath)) {
+            throw std::runtime_error("Failed to create directories: " + dirPath.string());
+        }
+    }
+
+    // Create the file if it does not exist
+    if (!fs::exists(filePath)) {
+        std::ofstream ofs(filePath);
+        if (!ofs) {
+            throw std::runtime_error("Failed to create file: " + filePath.string());
+        }
+        ofs.close();
+    }
+}
 Connection_Manager* Connection_Manager::instance= nullptr;
 
 void Connection_Manager::set_up(int port_tcp,int port_udp,std::string udp_group_ip) {
+
+
+    std::string path = "resource/savedata_server/";
+    try {
+        ensureFileExists(path);
+        std::cout << "File exists or was created: " << path << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+
     cnc_handle=Connection_Server(port_tcp,INADDR_ANY);
     broadcast_handle=Connection_Server(port_udp,inet_addr(udp_group_ip.c_str()),true);
     server = new Server_Obj;
 
-    std::string eth0_ip = cnc_handle.getEth0IPAddress()+" "+std::to_string(cnc_handle.PORT_);
+    std::string eth0_ip = cnc_handle.getEth0IPAddress();
+    if (eth0_ip==""){
+        std::cerr<<"no interface found"<<std::endl;
+        exit(1);
+    }
+    eth0_ip += " "+std::to_string(cnc_handle.PORT_);
     std::thread multitread([=] {broadcast_handle.send_on_multicast(eth0_ip);});
     multitread.detach();
 

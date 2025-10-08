@@ -70,6 +70,7 @@ std::string Connection_Server::getEth0IPAddress(){
     // Get the list of network interfaces
     if (getifaddrs(&ifaddr) == -1) {
         perror("getifaddrs");
+        std::cerr<<"getifaddrs"<<std::endl;
         return "";
     }
 
@@ -80,12 +81,14 @@ std::string Connection_Server::getEth0IPAddress(){
         }
 
         // Check if this is eth0 and if it's an IPv4 address
-        if (std::string(ifa->ifa_name) == "enp4s0" && ifa->ifa_addr->sa_family == AF_INET) {
+        //std::string(ifa->ifa_name) == "enp4s0" &&
+        if (ifa->ifa_addr->sa_family == AF_INET) {
             struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
 
             // Convert the address to a human-readable string
             if (inet_ntop(AF_INET, &addr->sin_addr, host, sizeof(host)) == nullptr) {
                 perror("inet_ntop");
+                std::cerr<<"inet_ntop"<<std::endl;
                 freeifaddrs(ifaddr);
                 return "";
             }
@@ -116,7 +119,9 @@ int Connection_Server::select_socket(int to_max_num) {
 
 void Connection_Server::send_on_multicast(std::string my_ip) {
     std::string multiCastMsg = my_ip;
+    std::cout<<"broadcasted msg: "<<my_ip<<std::endl;
     while (1) {
+
         if (sendto(socket_, multiCastMsg.c_str(), multiCastMsg.length(), 0, (struct sockaddr *) &srv,
                    sizeof(srv)) < 0) { perror("Sending datagram message error"); }
         sleep(1);
