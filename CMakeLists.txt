@@ -38,6 +38,10 @@ add_executable(server
         server.cpp
 )
 
+include_directories(${CMAKE_SOURCE_DIR}/protobuf/cpp)
+
+
+
 # Add the QML module for appchatroom
 qt_add_qml_module(appchatroom
         URI chatroom

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package messager;
+
+message Packet {
+  string name = 1;
+  string ip = 2;
+  string data = 3;
+
+  enum PacketType {
+    PACKET_TYPE_SIGNUP = 0;
+    PACKET_TYPE_LOGIN = 1;
+    PACKET_TYPE_MSG = 2;
+    PACKET_TYPE_NOTICE = 3;
+  }
+  PacketType packet_type = 4;
+
+}
+
