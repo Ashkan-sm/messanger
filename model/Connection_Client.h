@@ -6,7 +6,7 @@
 #define CHATROOM_CONNECTION_CLIENT_H
 
 #include <thread>
-#include <sys/socket.h>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <cstring>
@@ -16,13 +16,12 @@
 #include <QQmlContext>
 #include<cstdio>
 #include<iostream>
-#include<sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <fstream>
 #include <ifaddrs.h>
-
+#include <zmq.hpp>
 #include "client.h"
 
 class Client;
@@ -38,12 +37,14 @@ private:
     int HEADER_SIZE=10;
     std::vector<std::string> logs;
     std::ifstream::pos_type filesize(const char* filename);
-
+    zmq::context_t context{1};
+    zmq::socket_t *socket;
 public:
     int readmsg(char* out);
     explicit Connection_Client();
     explicit Connection_Client(int PORT,in_addr_t IP=INADDR_ANY,bool is_udp= false);
-    int read_sock(char *databuf,int size);
+    int read_sock(char *databuf,int size);\
+    std::string recv();
     void writemssg(const char *msg);
     void sendfile(std::string filename,QString to);
     std::string revcfile(std::string filename);

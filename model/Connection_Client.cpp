@@ -9,77 +9,20 @@ Connection_Client::Connection_Client(int PORT,in_addr_t IP,bool is_udp) {
     ip_=IP;
     is_udp_=is_udp;
 
-    if (is_udp_){
-        nClientSocket = socket(AF_INET, SOCK_DGRAM, 0);
-        if(nClientSocket < 0)
-        {
-            perror("Opening datagram socket error");
-            exit(1);
-        }
+    if(!is_udp) {
+        char ipStr[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &IP, ipStr, INET_ADDRSTRLEN);
+        socket = new zmq::socket_t(context, zmq::socket_type::dealer);
+        auto a="tcp://"+ (std::string)ipStr +":" + std::to_string(PORT);
+        socket->connect("tcp://"+ (std::string)ipStr +":" + std::to_string(PORT));
+    }
+    else {
 
-        else
-            printf("Opening datagram socket....OK.\n");
-
-        memset((char *) &localSock, 0, sizeof(localSock));
-        localSock.sin_family = AF_INET;
-        localSock.sin_port = htons(port_);
-        localSock.sin_addr.s_addr = INADDR_ANY;
-
-        {
-            int reuse = 1;
-            if(setsockopt(nClientSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0)
-            {
-                perror("Setting SO_REUSEADDR error");
-                close(nClientSocket);
-                exit(1);
-            }
-            else
-                printf("Setting SO_REUSEADDR...OK.\n");
-        }
-
-        if(bind(nClientSocket, (struct sockaddr*)&localSock, sizeof(localSock)))
-        {
-            perror("Binding datagram socket error");
-            close(nClientSocket);
-            exit(1);
-        }
-        else
-            printf("Binding datagram socket...OK.\n");
-
-        group.imr_multiaddr.s_addr = inet_addr("226.1.1.1");
-        group.imr_interface.s_addr = INADDR_ANY;
-
-
-        if(setsockopt(nClientSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0)
-        {
-            perror("Adding multicast group error");
-            close(nClientSocket);
-            exit(1);
-        }
-        else
-            printf("Adding multicast group...OK.\n");
-
+        socket = new zmq::socket_t(context, zmq::socket_type::sub);
+        socket->connect("tcp://127.0.0.1:12345");
+        socket->set(zmq::sockopt::subscribe, "");   // subscribe to all messages
 
     }
-    else{
-        nClientSocket =  socket(AF_INET, SOCK_STREAM, 0);
-        if (nClientSocket < 0) {
-            std::cerr << "Socket creation failed\n";
-            return;
-        }
-
-
-        localSock.sin_family = AF_INET;
-        localSock.sin_port = htons(port_);
-        localSock.sin_addr.s_addr= ip_;
-        memset(&(localSock.sin_zero),0,8);
-
-        if(auto code = ::connect(nClientSocket, (struct sockaddr*) & localSock, sizeof(localSock)) < 0){
-            qInfo()<<"conection failed: "<<strerror(errno);
-            close(nClientSocket);
-        }
-    }
-
 
 
 
@@ -92,18 +35,7 @@ int Connection_Client::read_sock(char *databuf,int size) {
 }
 int Connection_Client::readmsg(char *out)
 {
-    memset(out, '\0', strlen(out));
-    char header[HEADER_SIZE];
-    recv(nClientSocket,header,HEADER_SIZE,0);
-    header[HEADER_SIZE]='\0';
-    //std::string headstr(header);
 
-    int size=std::atoi(header);
-    int o;
-    o=recv(nClientSocket,out,size,0);
-    out[o]='\0';
-//    std::cout<<"got from server: "<<out<<std::endl;
-    return o;
 }
 
 void Connection_Client::connection_manager(Client* client_pointer) {
@@ -181,26 +113,34 @@ std::ifstream::pos_type Connection_Client::filesize(const char *filename) {
 std::string Connection_Client::revcfile(std::string filename) {
 
 
-        std::ofstream resivedfile("./savedata_client/"+filename);
-
-        ssize_t bytes_received;
-
-        char buffer[1024];
-        char sizestr[1024];
-        readmsg(sizestr);
-        long long int size = atoi(sizestr);
-        long long int recvCounter=0;
-        while(recvCounter+1024<size){
-            bytes_received = recv(nClientSocket, buffer, sizeof(buffer), 0);
-            resivedfile.write(buffer,bytes_received);
-            recvCounter += bytes_received;
-        }
-        bytes_received = recv(nClientSocket, buffer, size-recvCounter, 0);
-        resivedfile.write(buffer,bytes_received);
-
-
-        resivedfile.close();
-
-        return filename.substr(filename.find('.')+1);
+//        std::ofstream resivedfile("./savedata_client/"+filename);
+//
+//        ssize_t bytes_received;
+//
+//        char buffer[1024];
+//        char sizestr[1024];
+//        readmsg(sizestr);
+//        long long int size = atoi(sizestr);
+//        long long int recvCounter=0;
+//        while(recvCounter+1024<size){
+//            bytes_received = recv(nClientSocket, buffer, sizeof(buffer), 0);
+//            resivedfile.write(buffer,bytes_received);
+//            recvCounter += bytes_received;
+//        }
+//        bytes_received = recv(nClientSocket, buffer, size-recvCounter, 0);
+//        resivedfile.write(buffer,bytes_received);
+//
+//
+//        resivedfile.close();
+//
+//        return filename.substr(filename.find('.')+1);
 
 }
+
+std::string Connection_Client::recv() {
+    zmq::message_t msg;
+    socket->recv(msg);
+    std::cout<<"got "<<msg<<std::endl;
+    return std::string{(char*)msg.data(), msg.size()};
+}
+

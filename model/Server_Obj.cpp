@@ -9,13 +9,13 @@ Server_Obj::Server_Obj() {
 
 }
 
-int Server_Obj::find_user_id(std::vector<User> &list, std::string id) {
-    for (int i = 0; i < list.size(); ++i) {
-        if (list[i].id_==id){
-            return i;
+std::string Server_Obj::find_user_id(std::map<std::string,User> &list, std::string name) {
+    for (auto i:list) {
+        if (i.second.name_==name){
+            return i.first;
         }
     }
-    return -1;
+    return "";
 }
 void Server_Obj::run(Connection_Manager* conection_manager,std::string id,std::vector<std::string> log_arr) {
 
@@ -30,13 +30,13 @@ void Server_Obj::run(Connection_Manager* conection_manager,std::string id,std::v
     else if(log_arr[0].compare(0, strlen("/private_msg"),"/private_msg")==0){
         std::string recname=log_arr[0].substr(log_arr[0].find(' ')+1);
         std::cout<<"recname on meesaage: "<<recname<<std::endl;
-        int recid= find_user_id(conection_manager->getArrClient(),recname);
+        std::string recid= find_user_id(conection_manager->getArrClient(),recname);
 
-        if (recid!=-1){
-            if(recname!=id){
-                conection_manager->send_message_(recname, "/private_msg " + id);
-                conection_manager->send_message_(recname,log_arr[1]);
-                conection_manager->send_message_(recname,"EOLOG");
+        if (recid!=""){
+            if(recid!=id){
+                conection_manager->send_message_(recid, "/private_msg " + id);
+                conection_manager->send_message_(recid,log_arr[1]);
+                conection_manager->send_message_(recid,"EOLOG");
             }
             conection_manager->send_message_(id,"/status_update "+recname+" 2");
             conection_manager->send_message_(id,"EOLOG");
@@ -74,10 +74,10 @@ void Server_Obj::run(Connection_Manager* conection_manager,std::string id,std::v
         std::string recname=log_arr[0].substr(log_arr[0].find(' ')+1);
         char status=recname[recname.length()-1];
         recname=recname.substr(0,recname.find(' '));
-        int recid= find_user_id(conection_manager->getArrClient(),recname);
-        if (recid!=-1){
-            conection_manager->send_message_(recname,"/status_update "+id+" "+status);
-            conection_manager->send_message_(recname,"EOLOG");
+        std::string recid= find_user_id(conection_manager->getArrClient(),recname);
+        if (recid!=""){
+            conection_manager->send_message_(recid,"/status_update "+id+" "+status);
+            conection_manager->send_message_(recid,"EOLOG");
 
         }
         else{

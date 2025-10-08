@@ -6,9 +6,6 @@
 #define CHATROOM_CONNECTION_MANAGER_H
 
 #include <iostream>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <string>
 #include <cstring>
 #include <unistd.h>
@@ -20,7 +17,7 @@
 #include <cstdlib>
 #include <vector>
 #include <memory>
-
+#include <map>
 #include "Server_Obj.h"
 #include "Connection_Server.h"
 #include "User.h"
@@ -30,16 +27,16 @@ class Connection_Manager {
 private:
     int nMaxFd;
     int nRet=0;
-    Connection_Server cnc_handle;
-    Connection_Server broadcast_handle;
+    Connection_Server *cnc_handle;
+    Connection_Server *broadcast_handle;
     std::shared_ptr<std::thread> exec_thread_;
     Server_Obj* server;
     Connection_Manager();
     static void pop_user_by_socket(std::vector<User> &list,int sock);
-    static int find_user_id(std::vector<User> &list,std::string id);
+
     static Connection_Manager* instance;
     int MAX_CLIENTS=100;
-    std::vector<User> ArrClient;
+    std::map<std::string,User> ArrClient;
 
 public:
     static Connection_Manager& get_instance();
@@ -51,7 +48,7 @@ public:
     void read_file_(std::string client_id,std::string message);
     void logout(std::string id);
     void send_message_(std::string client_id,std::string message);
-    std::vector<User> &getArrClient() ;
+    std::map<std::string,User>& getArrClient() ;
 
 };
 

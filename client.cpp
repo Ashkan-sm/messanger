@@ -12,23 +12,18 @@ void Client::find_server_handle()
 
 
     while (1) {
+        std::string msg=udp_connection->recv();
+//        std::string server_ip_=stringbuff.substr(0,stringbuff.find(' '));
+//        std::string server_port= stringbuff.substr(stringbuff.find(' ')+1);
 
-        if (udp_connection->read_sock(databuf,sizeof(databuf)) < 0) {
-            perror("Reading datagram message error");
-            exit(1);
-        } else {
-            std::string stringbuff(databuf);
-            std::string server_ip_=stringbuff.substr(0,stringbuff.find(' '));
-            std::string server_port= stringbuff.substr(stringbuff.find(' ')+1);
+        QString out_server_id=QString::fromStdString(msg);
 
-            QString out_server_id=QString::fromStdString(server_ip_+" "+server_port);
-
-            if(!m_ServerList.contains(out_server_id)) {
-                m_ServerList.append(out_server_id);
-                emit ServerListChanged();
-            }
-
+        if(!m_ServerList.contains(out_server_id)) {
+            m_ServerList.append(out_server_id);
+            emit ServerListChanged();
         }
+
+
     }
 }
 

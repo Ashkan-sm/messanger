@@ -10,7 +10,12 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Correctly find Qt6 and the required components
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ZeroMQ REQUIRED libzmq)
 find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia)
+
+include_directories(${ZeroMQ_INCLUDE_DIRS})
+link_directories(${ZeroMQ_LIBRARY_DIRS})
 
 # Add the executable for appchatroom
 qt_add_executable(appchatroom
@@ -59,11 +64,11 @@ set_target_properties(appchatroom PROPERTIES
 
 # Link necessary Qt6 libraries for appchatroom
 target_link_libraries(appchatroom
-        PRIVATE Qt6::Quick Qt6::Multimedia)
+        PRIVATE Qt6::Quick Qt6::Multimedia ${ZeroMQ_LIBRARIES})
 
 # Link necessary Qt6 libraries for server
 target_link_libraries(server
-        PRIVATE Qt6::Core Qt6::Network)
+        PRIVATE Qt6::Core Qt6::Network ${ZeroMQ_LIBRARIES})
 
 include(GNUInstallDirs)
 install(TARGETS appchatroom

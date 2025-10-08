@@ -5,9 +5,9 @@
 #include "User.h"
 
 
-User::User(int socket, std::string id) {
+User::User(int socket, std::string name) {
     socket_=socket;
-    id_=id;
+    name_=name;
 }
 
 User::~User() {
@@ -16,4 +16,8 @@ User::~User() {
 
 int User::get_socket() const {
     return socket_;
+}
+
+User::User() {
+
 }

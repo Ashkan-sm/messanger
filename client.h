@@ -9,7 +9,6 @@
 #include <QQmlApplicationEngine>
 
 #include <thread>
-#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <cstring>
@@ -19,7 +18,6 @@
 #include <QQmlContext>
 #include<cstdio>
 #include<iostream>
-#include<sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>

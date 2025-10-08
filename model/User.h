@@ -7,14 +7,16 @@
 #include <string>
 #include <vector>
 class User {
-    explicit User();
+
 public:
     std::vector<std::string> logs;
     int get_socket() const;
+    explicit User();
     explicit User(int socket,std::string id="");
     ~User();
     int socket_;
-    std::string id_;
+    std::string name_;
+    bool authenticated=false;
 private:
 
 };
