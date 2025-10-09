@@ -9,7 +9,6 @@
 class User {
 
 public:
-    std::vector<std::string> logs;
     int get_socket() const;
     explicit User();
     explicit User(int socket,std::string id="");

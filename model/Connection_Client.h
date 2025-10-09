@@ -23,6 +23,7 @@
 #include <ifaddrs.h>
 #include <zmq.hpp>
 #include "client.h"
+#include "message.pb.h"
 
 class Client;
 
@@ -40,12 +41,12 @@ private:
     zmq::context_t context{1};
     zmq::socket_t *socket;
 public:
-    int readmsg(char* out);
+    messager::Packet readmsg();
     explicit Connection_Client();
     explicit Connection_Client(int PORT,in_addr_t IP=INADDR_ANY,bool is_udp= false);
     int read_sock(char *databuf,int size);\
     std::string recv();
-    void writemssg(const char *msg);
+    void writemssg(std::string msg);
     void sendfile(std::string filename,QString to);
     std::string revcfile(std::string filename);
     void connection_manager(Client* client_pointer);

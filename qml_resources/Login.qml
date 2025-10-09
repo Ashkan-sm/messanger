@@ -60,7 +60,7 @@ Rectangle{
 
                 }
                 onAccepted: {
-                    client.send_message(username_text.text+" "+password_text.text)
+                    client.send_message_login(username_text.text,password_text.text)
                     myuser=username_text.text
 
                 }
@@ -93,7 +93,7 @@ Rectangle{
                     radius: 5
                 }
                 onClicked: {
-                    client.send_message(username_text.text+" "+password_text.text)
+                    client.send_message_login(username_text.text,password_text.text)
                     myuser=username_text.text
                 }
             }
@@ -190,7 +190,7 @@ Rectangle{
 
                 }
                 onAccepted: {
-                    client.send_message("/sign_up "+username_text_signup.text+" "+password_text_signup.text)
+                    client.send_message_signup(username_text_signup.text,password_text_signup.text)
                     myuser=username_text_signup.text
 
                 }
@@ -224,7 +224,7 @@ Rectangle{
                 }
                 onClicked: {
 
-                    client.send_message("/sign_up "+username_text_signup.text+" "+password_text_signup.text)
+                    client.send_message_signup(username_text_signup.text,password_text_signup.text)
                     myuser=username_text_signup.text
                 }
             }

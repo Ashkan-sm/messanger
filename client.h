@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include "model/Connection_Client.h"
-
+#include "message.pb.h"
 
 
 class Connection_Client;
@@ -65,7 +65,7 @@ class Client : public QObject
 
 
 public:
-    void client_run(std::vector<std::string> lines);
+    void client_run(messager::Packet lines);
 
     Connection_Client* tcp_connection;
     Connection_Client* udp_connection;
@@ -125,7 +125,8 @@ signals:
     void ChatidChanged();
 
 public slots:
-    void send_message(QString text);
+    void send_message_login(QString user,QString pass);
+    void send_message_signup(QString user,QString pass);
     QString now_time();
     void send_private_message(QString to,QString text);
     void send_private_file(QString to,QString path);

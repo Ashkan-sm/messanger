@@ -71,9 +71,13 @@ Client::Client(QObject *parent): QObject{parent}
 
 }
 
-void Client::send_message(QString text)
+void Client::send_message_login(QString user, QString pass)
 {
-    tcp_connection->writemssg(text.toStdString().c_str());
+    messager::Packet login_msg;
+    login_msg.set_data(pass.toStdString());
+    login_msg.set_packet_type(messager::Packet_PacketType_PACKET_TYPE_LOGOUT);
+    login_msg.set_name(user.toStdString());
+    tcp_connection->writemssg(login_msg.SerializeAsString());
 }
 
 QString Client::now_time()
@@ -88,9 +92,13 @@ QString Client::now_time()
 
 void Client::send_private_message(QString to,QString text)
 {
-    tcp_connection->writemssg(("/private_msg "+to.toStdString()).c_str());
-    tcp_connection->writemssg((text.toStdString()).c_str());
-    tcp_connection->writemssg("EOLOG");
+    messager::Packet pv_msg;
+    pv_msg.set_data(text.toStdString());
+    pv_msg.set_packet_type(messager::Packet_PacketType_PACKET_TYPE_PRIVATE_MESSAGES);
+    pv_msg.set_receiver_name(to.toStdString());
+
+    tcp_connection->writemssg(pv_msg.SerializeAsString());
+
 }
 
 void Client::send_private_file(QString to, QString path)
@@ -281,127 +289,84 @@ void Client::logout() {
 
 }
 
-void Client::client_run(std::vector<std::string> lines) {
-    int ii=0;
-    for (auto i : lines){
-        std::cout<<"line "<<ii++<<": "<<i<<std::endl;
-    }
+void Client::client_run(messager::Packet msg) {
 
-    if(strcmp(lines[0].c_str(),"/ClientId")==0){
+    if (msg.packet_type() == messager::Packet_PacketType_PACKET_TYPE_CLIENT_LIST) {
         m_Clients.clear();
         m_Notif.clear();
-        int i=1;
-        while(i<lines.size()-2){
-            m_Clients.push_back(QString::fromLocal8Bit(lines[i].c_str()));
-            m_Notif[QString::fromLocal8Bit(lines[i].c_str())]=0;
-            i++;
+        std::stringstream users(msg.data());
+        std::string client;
+        while (users >> client) {
+            m_Clients.push_back(QString::fromStdString(client));
+            m_Notif[QString::fromStdString(client)] = 0;
         }
         emit NotifChanged();
         emit ClientsChanged();
-    }
-    else if(strncmp(lines[0].c_str(),"/private_msg",strlen("/private_msg"))==0){
+    } else if (msg.packet_type() == messager::Packet_PacketType_PACKET_TYPE_PRIVATE_MESSAGES) {
 
-        std::string sender=(lines[0].substr(lines[0].find(' ')+1));
+        std::string sender = msg.name();
 
         std::fstream savefile;
-        savefile.open(("savedata_client/"+MyId+sender+".txt"),std::ios::in | std::ios::app);
+        savefile.open(("savedata_client/" + MyId + sender + ".txt"), std::ios::in | std::ios::app);
         savefile.clear();
         savefile.seekp(0, std::ios::end);
-        savefile << sender+"> "+lines[1]+"EOMSG\n";
+        savefile << sender + "> " + msg.data() + "EOMSG\n";
 
         savefile.close();
         std::cout << "Wrote pv msg" << std::endl;
 
-        if (sender==Chatwindow().toStdString() || sender==MyId){
+        if (sender == Chatwindow().toStdString() || sender == MyId) {
 
-            m_Chats[QString::fromStdString(sender)]=m_Chats[QString::fromStdString(sender)].toString()+QString::fromStdString(sender)+"> "+QString::fromStdString(lines[1]+"EOMSG");
-            tcp_connection->writemssg(("/status_update "+sender+" 3").c_str());
-            tcp_connection->writemssg("EOLOG");
+            m_Chats[QString::fromStdString(sender)] =
+                    m_Chats[QString::fromStdString(sender)].toString() + QString::fromStdString(sender) + "> " +
+                    QString::fromStdString(msg.data() + "EOMSG");
+            messager::Packet send_msg;
+            send_msg.set_data("3");
+            send_msg.set_packet_type(messager::Packet_PacketType_PACKET_TYPE_STATUS_UPDATE);
+            tcp_connection->writemssg(send_msg.SerializeAsString());
+
 
             emit ChatsChanged();
-        }
-        else{
-            m_Notif[QString::fromStdString(sender)]=m_Notif[QString::fromStdString(sender)].toInt()+1;
+        } else {
+            m_Notif[QString::fromStdString(sender)] = m_Notif[QString::fromStdString(sender)].toInt() + 1;
             emit NotifChanged();
-            qInfo()<<1;
+            qInfo() << 1;
         }
 
 
+    } else if (msg.packet_type() == messager::Packet_PacketType_PACKET_TYPE_STATUS_UPDATE) {
+        std::string foruser = msg.name();
+        std::string status = msg.data();
+        std::string lastmsg = m_Chats[QString::fromStdString(foruser)].toString().toStdString();
+//to be completed
 
-
-    }
-    else if(strncmp(lines[0].c_str(),"/status_update",strlen("/status_update"))==0){
-        std::string foruser=lines[0].substr(lines[0].find(' ')+1,lines[0].rfind(' ')-lines[0].find(' ')-1);
-        char status=lines[0][lines[0].length()-1];
-        std::string lastmsg=m_Chats[QString::fromStdString(foruser)].toString().toStdString();
-
-        std::fstream savefile;
-
-        while(1) {
-            std::size_t index = lastmsg.rfind("/status");
-            // std::cout<<id<<"**"<<lastmsg<<std::endl;
-            if (index == std::string::npos) {
-                break;
-            }
-
-            if (lastmsg[index + 8] < status) {
-                auto temp = m_Chats[QString::fromStdString(foruser)].toString();
-                temp[index + 8] = status;
-                m_Chats[QString::fromStdString(foruser)] = temp;
-                emit ChatsChanged();
-
-                // fseek(savefile,index+8);
-            } else {
-                break;
-            }
-            lastmsg = lastmsg.substr(0, index + 1);
-
-        }
-        savefile.open(("savedata_client/"+MyId+foruser+".txt"), std::ios::in | std::ios::out);
-        std::string all_lines;
-        std::string line;
-        if (savefile.is_open()) {
-            while(getline(savefile,line)){
-                auto index=line.find("/status");
-                if (index !=std::string::npos){
-                    line[index+8]=status;
-                }
-                all_lines+=line+'\n';
-            }
-
-            savefile.close();
-            std::ofstream savefile2("savedata_client/"+MyId+foruser+".txt");
-
-            savefile2.write(all_lines.c_str(),all_lines.size());
-            savefile2.close();
-
-        }
-        else{
-            std::cout<<"didntope "<<"savedata_client/"+MyId+foruser+".txt"<<std::endl;
-        }
-        std::cout<<"saved"<<std::endl;
-
-    }
-    else if(strncmp(lines[0].c_str(),"/sending_file",strlen("/sending_file"))==0){
-        std::string path=lines[0].substr(lines[0].find(' ')+1);
-
-        std::string type= tcp_connection->revcfile(path);
-
-        if (type=="png"){
-            appendChats(Chatid(),Chatid()+"> "+"/image "+QString::fromStdString(path)+"/time "+now_time()+"/status 2"+"EOMSG");
-        } else if(type=="jpg"){
-            appendChats(Chatid(),Chatid()+"> "+"/image "+QString::fromStdString(path)+"/time "+now_time()+"/status 2"+"EOMSG");
-        } else if(type=="mp4"){
-            appendChats(Chatid(),Chatid()+"> "+"/video "+QString::fromStdString(path)+"/time "+now_time()+"/status 2"+"EOMSG");
-        }
-    }
-
-    else{
-        if(connected==0 && strncmp(lines[1].c_str(),"Wellcome",strlen("Wellcome"))==0){
-            connected=1;
-            MyId=lines[1].substr(lines[1].find(' ')+1);
+    } else if (msg.packet_type() == messager::Packet_PacketType_PACKET_TYPE_FILE_SEND) {
+//        std::string path=lines[0].substr(lines[0].find(' ')+1);
+//
+//        std::string type= tcp_connection->revcfile(path);
+//
+//        if (type=="png"){
+//            appendChats(Chatid(),Chatid()+"> "+"/image "+QString::fromStdString(path)+"/time "+now_time()+"/status 2"+"EOMSG");
+//        } else if(type=="jpg"){
+//            appendChats(Chatid(),Chatid()+"> "+"/image "+QString::fromStdString(path)+"/time "+now_time()+"/status 2"+"EOMSG");
+//        } else if(type=="mp4"){
+//            appendChats(Chatid(),Chatid()+"> "+"/video "+QString::fromStdString(path)+"/time "+now_time()+"/status 2"+"EOMSG");
+//        }
+    } else if (msg.packet_type() == messager::Packet_PacketType_PACKET_TYPE_AUTHENTICATE) {
+        if (connected == 0) {
+            connected = 1;
+            MyId = msg.data().substr(msg.data().find(' ') + 1);
             setWindowId(1);
         }
         //std::this_thread::sleep_for(std::chrono::seconds(1));
+
     }
+}
+
+void Client::send_message_signup(QString user, QString pass) {
+    messager::Packet login_msg;
+    login_msg.set_data(pass.toStdString());
+    login_msg.set_packet_type(messager::Packet_PacketType_PACKET_TYPE_SIGNUP);
+    login_msg.set_name(user.toStdString());
+    tcp_connection->writemssg(login_msg.SerializeAsString());
 }

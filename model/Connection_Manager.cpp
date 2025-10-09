@@ -68,39 +68,47 @@ void Connection_Manager::pop_user_by_socket(std::vector<User> &list, int sock) {
 
 
 void Connection_Manager::start_server() {
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
     exec_thread_ = std::make_shared<std::thread>([&] {
         while (1) {
 
-            std::pair<std::string, std::string> msg = cnc_handle->recv();
-            std::string client_id = msg.first;
-            std::string req = msg.second;
-
-            std::cout << "buf from client: " << client_id << " : " << req << std::endl;
+            std::pair<std::string, std::string> zmqmsg = cnc_handle->recv();
+            std::string client_id = zmqmsg.first;
+            std::string req = zmqmsg.second;
             ArrClient[client_id];
-            if (strncmp("/sign_up", req.c_str(), strlen("/sign_up")) == 0) {
+
+            messager::Packet msg;
+            msg.ParseFromString(req);
+
+
+            if (msg.packet_type()==messager::Packet_PacketType_PACKET_TYPE_SIGNUP) {
                 std::ifstream username("userid.txt");
                 int validusername = 1;
                 std::string users;
-                std::string usern = req.substr(9, req.find(' '));
-                while (std::getline(username, users)) {
-                    if (usern == users) {
-                        validusername = 0;
+                std::string usern = msg.name();
+                if(username.is_open()) {
+                    while (std::getline(username, users)) {
+                        if (usern == users) {
+                            validusername = 0;
+                        }
                     }
+                    if (validusername) {
+                        std::fstream savefile;
+                        savefile.open("userid.txt", std::ios::in | std::ios::app);
+                        savefile.clear();
+                        savefile.seekp(0, std::ios::end);
+                        savefile << usern + msg.data() +"\n";
+                        std::cout << "added user" << std::endl;
+                        savefile.close();
+                    }
+                    username.close();
+                } else{
+                    std::cerr <<"didnt open userid.txt"<<std::endl;
                 }
-                if (validusername) {
-                    std::fstream savefile;
-                    savefile.open("userid.txt", std::ios::in | std::ios::app);
-                    savefile.clear();
-                    savefile.seekp(0, std::ios::end);
-                    savefile << req.substr(9) + "\n";
-                    std::cout << "added user" << std::endl;
-                    savefile.close();
-                }
-                username.close();
-
             } else {
                 if (ArrClient[client_id].authenticated){
-                    server->run(this, client_id, ArrClient[client_id].logs);
+                    server->run(this, client_id, msg);
+                    continue;
                 }
                 std::ifstream idfile("userid.txt");
                 std::ifstream username("userid.txt");
@@ -108,20 +116,24 @@ void Connection_Manager::start_server() {
                 if (idfile.is_open()) {
                     std::string line;
                     while (std::getline(idfile, line)) {
-                        if (line == req) {
+                        if (line == msg.name()+" "+msg.data()) {
                             ArrClient[client_id].authenticated = true;
-                            cnc_handle->send_msg_to_sock(client_id, "Server");
-                            cnc_handle->send_msg_to_sock(client_id, ("Wellcome " + client_id).c_str());
-                            cnc_handle->send_msg_to_sock(client_id, "EOLOG");
+                            messager::Packet send_msg;
+                            send_msg.set_data("Welcome "+client_id);
+                            send_msg.set_packet_type(messager::Packet_PacketType_PACKET_TYPE_AUTHENTICATE);
+                            cnc_handle->send_msg_to_sock(client_id,send_msg.SerializeAsString());
 
-                            cnc_handle->send_msg_to_sock(client_id, "/ClientId");
+                            messager::Packet msg_update_client;
+                            msg_update_client.set_packet_type(messager::Packet_PacketType_PACKET_TYPE_CLIENT_LIST);
+
+
+                            std::string user;
                             std::string users;
-                            while (std::getline(username, users)) {
-                                cnc_handle->send_msg_to_sock(client_id, users.substr(0, users.find(' ')).c_str());
+                            while (std::getline(username, user)) {
+                                users+=user.substr(0, user.find(' '))+" ";
                             }
-                            cnc_handle->send_msg_to_sock(client_id, "/ClientIdEnd");
-                            cnc_handle->send_msg_to_sock(client_id, "EOLOG");
-
+                            msg_update_client.set_data(users);
+                            cnc_handle->send_msg_to_sock(client_id,msg_update_client.SerializeAsString());
                             //sending personal msgs
                             char cwd[1024];  // Buffer to store current working directory
                             if (getcwd(cwd, sizeof(cwd)) != nullptr) {

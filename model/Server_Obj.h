@@ -18,7 +18,7 @@
 #include <thread>
 #include <cstdlib>
 #include <vector>
-
+#include "message.pb.h"
 #include "Connection_Manager.h"
 #include "User.h"
 
@@ -28,7 +28,7 @@ class Server_Obj {
     std::string find_user_id(std::map<std::string,User> &list,std::string id);
 public:
     explicit Server_Obj();
-    void run(Connection_Manager* conection_manager, std::string id,std::vector<std::string> log_arr);
+    void run(Connection_Manager* conection_manager,std::string id,messager::Packet &msg);
 
 };
 

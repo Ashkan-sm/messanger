@@ -5,15 +5,26 @@ package messager;
 message Packet {
   string name = 1;
   string ip = 2;
-  string data = 3;
+  bytes data = 3;
 
   enum PacketType {
-    PACKET_TYPE_SIGNUP = 0;
-    PACKET_TYPE_LOGIN = 1;
-    PACKET_TYPE_MSG = 2;
-    PACKET_TYPE_NOTICE = 3;
+    PACKET_TYPE_UNKOWN=0;
+    PACKET_TYPE_SIGNUP = 1;
+    PACKET_TYPE_LOGIN = 2;
+    PACKET_TYPE_MSG = 3;
+    PACKET_TYPE_NOTICE = 4;
+    PACKET_TYPE_SERVER_BROADCAST = 5;
+    PACKET_TYPE_FILE_SEND = 6;
+    PACKET_TYPE_PRIVATE_MESSAGES = 7;
+    PACKET_TYPE_STATUS_UPDATE = 8;
+    PACKET_TYPE_FILE_GET = 9;
+    PACKET_TYPE_LOGOUT = 10;
+    PACKET_TYPE_AUTHENTICATE = 11;
+    PACKET_TYPE_CLIENT_LIST = 12;
+
   }
   PacketType packet_type = 4;
+  string receiver_name=5;
 
 }
 

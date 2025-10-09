@@ -14,7 +14,7 @@ Connection_Client::Connection_Client(int PORT,in_addr_t IP,bool is_udp) {
         inet_ntop(AF_INET, &IP, ipStr, INET_ADDRSTRLEN);
         socket = new zmq::socket_t(context, zmq::socket_type::dealer);
         auto a="tcp://"+ (std::string)ipStr +":" + std::to_string(PORT);
-        socket->connect("tcp://"+ (std::string)ipStr +":" + std::to_string(PORT));
+        socket->connect("tcp://"+ (std::string) ipStr +":"+std::to_string(PORT));
     }
     else {
 
@@ -33,22 +33,26 @@ Connection_Client::Connection_Client(int PORT,in_addr_t IP,bool is_udp) {
 int Connection_Client::read_sock(char *databuf,int size) {
     return read(nClientSocket, databuf,size);
 }
-int Connection_Client::readmsg(char *out)
+messager::Packet Connection_Client::readmsg()
 {
-
+    zmq::message_t reply;
+    socket->recv(reply);
+    messager::Packet packet;
+    std::string msg_str(static_cast<char*>(reply.data()), reply.size());
+    packet.ParseFromString( msg_str);
+    return packet;
 }
 
 void Connection_Client::connection_manager(Client* client_pointer) {
     while(1){
-        char buffer[4096]={0};
-//        qInfo()<<"reading";
-        readmsg(buffer);
-        logs.push_back((buffer));
-//        std::cout<<"got : "<<buffer<<std::endl;
-        if (strncmp(buffer,"EOLOG",strlen("EOLOG"))==0){
-            client_pointer->client_run(logs);
-            logs.clear();
-        }
+        qInfo()<<"reading";
+        messager::Packet msg;
+        msg=readmsg();
+        std::cout<<"got on tcp: "<<msg.DebugString()<<std::endl;
+
+        client_pointer->client_run(msg);
+
+
 
     }
 }
@@ -57,18 +61,10 @@ Connection_Client::Connection_Client() {
 
 }
 
-void Connection_Client::writemssg(const char *msg) {
+void Connection_Client::writemssg(std::string msg) {
 
 
-    std::string msgstr(msg);
-
-    std::string header(10,' ');
-    std::string msglength=std::to_string(msgstr.length());
-    header.replace(0,msglength.length(),msglength);
-
-    std::string buffer(header+msgstr);
-
-    send(nClientSocket,buffer.c_str(),buffer.length(),0);
+    socket->send(zmq::buffer(msg));
 
 }
 
@@ -140,7 +136,9 @@ std::string Connection_Client::revcfile(std::string filename) {
 std::string Connection_Client::recv() {
     zmq::message_t msg;
     socket->recv(msg);
-    std::cout<<"got "<<msg<<std::endl;
+
     return std::string{(char*)msg.data(), msg.size()};
 }
+
+
 

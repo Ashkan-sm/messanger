@@ -21,7 +21,7 @@
 #include "Server_Obj.h"
 #include "Connection_Server.h"
 #include "User.h"
-
+#include "message.pb.h"
 class Server_Obj;
 class Connection_Manager {
 private:

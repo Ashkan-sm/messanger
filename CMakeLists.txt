@@ -16,7 +16,8 @@ find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia)
 
 include_directories(${ZeroMQ_INCLUDE_DIRS})
 link_directories(${ZeroMQ_LIBRARY_DIRS})
-
+find_package(Protobuf REQUIRED)
+include_directories(${CMAKE_SOURCE_DIR}/protobuf/cpp)
 # Add the executable for appchatroom
 qt_add_executable(appchatroom
         model/File_Handle.h
@@ -26,6 +27,7 @@ qt_add_executable(appchatroom
         client.h
         client.cpp
         main.cpp
+        protobuf/cpp/message.pb.cc
 )
 
 # Add the executable for server
@@ -41,9 +43,10 @@ add_executable(server
         model/File_Handle.cpp
         model/File_Handle.h
         server.cpp
+        protobuf/cpp/message.pb.cc
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/protobuf/cpp)
+
 
 
 
@@ -64,11 +67,11 @@ set_target_properties(appchatroom PROPERTIES
 
 # Link necessary Qt6 libraries for appchatroom
 target_link_libraries(appchatroom
-        PRIVATE Qt6::Quick Qt6::Multimedia ${ZeroMQ_LIBRARIES})
+        PRIVATE Qt6::Quick Qt6::Multimedia ${ZeroMQ_LIBRARIES} ${Protobuf_LIBRARIES})
 
 # Link necessary Qt6 libraries for server
 target_link_libraries(server
-        PRIVATE Qt6::Core Qt6::Network ${ZeroMQ_LIBRARIES})
+        PRIVATE Qt6::Core Qt6::Network ${ZeroMQ_LIBRARIES} ${Protobuf_LIBRARIES})
 
 include(GNUInstallDirs)
 install(TARGETS appchatroom

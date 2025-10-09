@@ -13,7 +13,7 @@ Connection_Server::Connection_Server(uint16_t PORT, in_addr_t IP,bool is_udp) {
         char ipStr[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &IP_, ipStr, INET_ADDRSTRLEN);
         socket = new zmq::socket_t(context, zmq::socket_type::router);
-        socket->bind("tcp://"+ (std::string)ipStr +":" + std::to_string(PORT));
+        socket->bind("tcp://"+ (std::string) ipStr +":"+std::to_string(PORT));
     }
     else {
 
@@ -85,11 +85,9 @@ void Connection_Server::send_on_multicast(std::string my_ip) {
 
 void Connection_Server::send_msg_to_sock(std::string id,std::string msg) {
     zmq::message_t id_reply(id.data(), id.size());
-    zmq::message_t empty_reply(0);
     zmq::message_t reply(msg.c_str(), msg.size());
 
     socket->send(id_reply, zmq::send_flags::sndmore);
-    socket->send(empty_reply, zmq::send_flags::sndmore);
     socket->send(reply, zmq::send_flags::none);
 }
 
@@ -156,12 +154,12 @@ std::pair<std::string,std::string> Connection_Server::recv() {
     zmq::message_t request;
 
     socket->recv(client_id);
-    socket->recv(empty);   // empty frame
     socket->recv(request);
 
     std::string id_str(static_cast<char*>(client_id.data()), client_id.size());
     std::string msg(static_cast<char*>(request.data()), request.size());
     return {id_str,msg};
+
 }
 
 
